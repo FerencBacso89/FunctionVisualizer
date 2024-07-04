@@ -1,5 +1,5 @@
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
 document.body.appendChild(canvas);
 
 canvas.width = 800;
@@ -9,7 +9,7 @@ const margin = 50;
 const width = canvas.width - 2 * margin;
 const height = canvas.height - 2 * margin;
 
-let func = x => Math.sin(x);
+let func = (x) => Math.sin(x);
 let xMin = -10;
 let xMax = 10;
 let yMin = -2;
@@ -22,13 +22,11 @@ function drawAxes() {
   ctx.lineTo(canvas.width - margin, canvas.height - margin);
   ctx.stroke();
 
-  // X tengely számozása
   for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
     const px = ((x - xMin) / (xMax - xMin)) * width + margin;
     ctx.fillText(x, px, canvas.height - margin + 20);
   }
 
-  // Y tengely számozása
   for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
     const py = height - ((y - yMin) / (yMax - yMin)) * height + margin;
     ctx.fillText(y, margin - 20, py);
@@ -57,16 +55,28 @@ function draw() {
 }
 
 function updateFunction() {
-  const input = document.getElementById('funcInput').value;
+  const input = document.getElementById("funcInput").value;
   try {
-    func = new Function('x', `return ${input};`);
+    // Előfeldolgozás a kifejezésekhez
+    let processedInput = input
+      .replace(/\^/g, "**") // Hatványozás: ^ helyett **
+      .replace(/log\(/g, "Math.log(") // Természetes logaritmus
+      .replace(/ln\(/g, "Math.log(") // Természetes logaritmus alternatív jelölése
+      .replace(/log10\(/g, "Math.log10(") // 10-es alapú logaritmus
+      .replace(/exp\(/g, "Math.exp(") // Exponenciális függvény
+      .replace(/sin\(/g, "Math.sin(") // Szinusz
+      .replace(/cos\(/g, "Math.cos(") // Koszinusz
+      .replace(/tan\(/g, "Math.tan(") // Tangens
+      .replace(/sqrt\(/g, "Math.sqrt("); // Négyzetgyök
+
+    func = new Function("x", `return ${processedInput};`);
     draw();
   } catch (error) {
-    console.error('Érvénytelen függvény:', error);
+    console.error("Érvénytelen függvény:", error);
   }
 }
 
-canvas.addEventListener('mousemove', event => {
+canvas.addEventListener("mousemove", (event) => {
   const rect = canvas.getBoundingClientRect();
   const x =
     ((event.clientX - rect.left - margin) / width) * (xMax - xMin) + xMin;
@@ -74,7 +84,7 @@ canvas.addEventListener('mousemove', event => {
 
   draw();
 
-  ctx.fillStyle = 'red';
+  ctx.fillStyle = "red";
   ctx.beginPath();
   ctx.arc(
     event.clientX - rect.left,
@@ -85,7 +95,7 @@ canvas.addEventListener('mousemove', event => {
   );
   ctx.fill();
 
-  ctx.fillStyle = 'black';
+  ctx.fillStyle = "black";
   ctx.fillText(
     `(${x.toFixed(2)}, ${y.toFixed(2)})`,
     event.clientX - rect.left + 10,
@@ -93,7 +103,7 @@ canvas.addEventListener('mousemove', event => {
   );
 });
 
-canvas.addEventListener('wheel', event => {
+canvas.addEventListener("wheel", (event) => {
   event.preventDefault();
   const zoomFactor = event.deltaY > 0 ? 1.1 : 0.9;
   const rect = canvas.getBoundingClientRect();
@@ -110,14 +120,14 @@ canvas.addEventListener('wheel', event => {
   draw();
 });
 
-const input = document.createElement('input');
-input.id = 'funcInput';
-input.type = 'text';
-input.value = 'Math.sin(x)';
+const input = document.createElement("input");
+input.id = "funcInput";
+input.type = "text";
+input.value = "sin(x)";
 document.body.insertBefore(input, canvas);
 
-const button = document.createElement('button');
-button.textContent = 'Rajzolás';
+const button = document.createElement("button");
+button.textContent = "Rajzolás";
 button.onclick = updateFunction;
 document.body.insertBefore(button, canvas);
 
