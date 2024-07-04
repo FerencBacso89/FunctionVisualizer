@@ -34,16 +34,14 @@ function drawAxes() {
     ctx.fillText(y, margin - 20, py);
   }
 
-  // 0 vízszintes tengely rajzolása, ha szükséges
-  if (yMin < 0 && yMax > 0) {
-    const zeroY = height - ((0 - yMin) / (yMax - yMin)) * height + margin;
-    ctx.beginPath();
-    ctx.moveTo(margin, zeroY);
-    ctx.lineTo(canvas.width - margin, zeroY);
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-    ctx.stroke();
-    ctx.strokeStyle = "black";
-  }
+  // X tengely (y = 0) rajzolása
+  const zeroY = height - ((0 - yMin) / (yMax - yMin)) * height + margin;
+  ctx.beginPath();
+  ctx.moveTo(margin, zeroY);
+  ctx.lineTo(canvas.width - margin, zeroY);
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.stroke();
+  ctx.strokeStyle = "black";
 }
 
 function drawFunction() {
@@ -53,15 +51,21 @@ function drawFunction() {
     const x = (px / width) * (xMax - xMin) + xMin;
     const y = func(x);
     const py = height - ((y - yMin) / (yMax - yMin)) * height;
-    if (px === 0) {
+    if (px === 0 || Math.abs(y - prevY) > yMax - yMin) {
       ctx.moveTo(px + margin, py + margin);
     } else {
       ctx.lineTo(px + margin, py + margin);
-      // Metszéspontok jelölése
+      // X tengely metszéspontjának jelölése
       if ((prevY < 0 && y >= 0) || (prevY >= 0 && y < 0)) {
         ctx.fillStyle = "blue";
         ctx.beginPath();
-        ctx.arc(px + margin, py + margin, 4, 0, 2 * Math.PI);
+        ctx.arc(
+          px + margin,
+          height - (-yMin / (yMax - yMin)) * height + margin,
+          4,
+          0,
+          2 * Math.PI
+        );
         ctx.fill();
       }
     }
@@ -93,6 +97,26 @@ function updateFunction() {
       .replace(/sqrt\(/g, "Math.sqrt(");
 
     func = new Function("x", `return ${processedInput};`);
+
+    // Függvény középre igazítása és tartomány meghatározása
+    let yValues = [];
+    for (let x = xMin; x <= xMax; x += 0.1) {
+      try {
+        let y = func(x);
+        if (isFinite(y)) {
+          yValues.push(y);
+        }
+      } catch (e) {
+        // Hibás pontok kihagyása
+      }
+    }
+    yMin = Math.min(...yValues);
+    yMax = Math.max(...yValues);
+    let yCenter = (yMin + yMax) / 2;
+    let yRange = yMax - yMin;
+    yMin = yCenter - yRange / 2;
+    yMax = yCenter + yRange / 2;
+
     draw();
   } catch (error) {
     console.error("Érvénytelen függvény:", error);
@@ -172,4 +196,4 @@ window.addEventListener("resize", () => {
   draw();
 });
 
-draw();
+updateFunction();
