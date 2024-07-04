@@ -2,8 +2,8 @@ const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d");
 document.body.appendChild(canvas);
 
-canvas.width = 800;
-canvas.height = 600;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight - 50; // Helyet hagyunk az input mezőnek
 
 const margin = 50;
 const width = canvas.width - 2 * margin;
@@ -22,19 +22,33 @@ function drawAxes() {
   ctx.lineTo(canvas.width - margin, canvas.height - margin);
   ctx.stroke();
 
+  // X tengely számozása
   for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
     const px = ((x - xMin) / (xMax - xMin)) * width + margin;
     ctx.fillText(x, px, canvas.height - margin + 20);
   }
 
+  // Y tengely számozása
   for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
     const py = height - ((y - yMin) / (yMax - yMin)) * height + margin;
     ctx.fillText(y, margin - 20, py);
+  }
+
+  // 0 vízszintes tengely rajzolása, ha szükséges
+  if (yMin < 0 && yMax > 0) {
+    const zeroY = height - ((0 - yMin) / (yMax - yMin)) * height + margin;
+    ctx.beginPath();
+    ctx.moveTo(margin, zeroY);
+    ctx.lineTo(canvas.width - margin, zeroY);
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.stroke();
+    ctx.strokeStyle = "black";
   }
 }
 
 function drawFunction() {
   ctx.beginPath();
+  let prevY;
   for (let px = 0; px < width; px++) {
     const x = (px / width) * (xMax - xMin) + xMin;
     const y = func(x);
@@ -43,9 +57,19 @@ function drawFunction() {
       ctx.moveTo(px + margin, py + margin);
     } else {
       ctx.lineTo(px + margin, py + margin);
+      // Metszéspontok jelölése
+      if ((prevY < 0 && y >= 0) || (prevY >= 0 && y < 0)) {
+        ctx.fillStyle = "blue";
+        ctx.beginPath();
+        ctx.arc(px + margin, py + margin, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
+    prevY = y;
   }
+  ctx.strokeStyle = "red";
   ctx.stroke();
+  ctx.strokeStyle = "black";
 }
 
 function draw() {
@@ -57,17 +81,16 @@ function draw() {
 function updateFunction() {
   const input = document.getElementById("funcInput").value;
   try {
-    // Előfeldolgozás a kifejezésekhez
     let processedInput = input
-      .replace(/\^/g, "**") // Hatványozás: ^ helyett **
-      .replace(/log\(/g, "Math.log(") // Természetes logaritmus
-      .replace(/ln\(/g, "Math.log(") // Természetes logaritmus alternatív jelölése
-      .replace(/log10\(/g, "Math.log10(") // 10-es alapú logaritmus
-      .replace(/exp\(/g, "Math.exp(") // Exponenciális függvény
-      .replace(/sin\(/g, "Math.sin(") // Szinusz
-      .replace(/cos\(/g, "Math.cos(") // Koszinusz
-      .replace(/tan\(/g, "Math.tan(") // Tangens
-      .replace(/sqrt\(/g, "Math.sqrt("); // Négyzetgyök
+      .replace(/\^/g, "**")
+      .replace(/log\(/g, "Math.log(")
+      .replace(/ln\(/g, "Math.log(")
+      .replace(/log10\(/g, "Math.log10(")
+      .replace(/exp\(/g, "Math.exp(")
+      .replace(/sin\(/g, "Math.sin(")
+      .replace(/cos\(/g, "Math.cos(")
+      .replace(/tan\(/g, "Math.tan(")
+      .replace(/sqrt\(/g, "Math.sqrt(");
 
     func = new Function("x", `return ${processedInput};`);
     draw();
@@ -84,7 +107,7 @@ canvas.addEventListener("mousemove", (event) => {
 
   draw();
 
-  ctx.fillStyle = "red";
+  ctx.fillStyle = "green";
   ctx.beginPath();
   ctx.arc(
     event.clientX - rect.left,
@@ -120,15 +143,33 @@ canvas.addEventListener("wheel", (event) => {
   draw();
 });
 
+const inputContainer = document.createElement("div");
+inputContainer.style.position = "fixed";
+inputContainer.style.bottom = "0";
+inputContainer.style.left = "0";
+inputContainer.style.width = "100%";
+inputContainer.style.padding = "10px";
+inputContainer.style.backgroundColor = "#f0f0f0";
+
 const input = document.createElement("input");
 input.id = "funcInput";
 input.type = "text";
 input.value = "sin(x)";
-document.body.insertBefore(input, canvas);
+input.style.width = "80%";
+inputContainer.appendChild(input);
 
 const button = document.createElement("button");
 button.textContent = "Rajzolás";
 button.onclick = updateFunction;
-document.body.insertBefore(button, canvas);
+button.style.marginLeft = "10px";
+inputContainer.appendChild(button);
+
+document.body.appendChild(inputContainer);
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight - 50;
+  draw();
+});
 
 draw();
